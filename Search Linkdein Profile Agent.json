@@ -1,0 +1,237 @@
+{
+  "name": "Search Linkdein Profile Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"assignments\": [\n    {\n      \"name\": \"query\",\n      \"value\": \"{{ $json.Prompt }}\",\n      \"type\": \"string\"\n    },\n    {\n      \"name\": \"max_results\",\n      \"value\": \"{{ $json.Result }}\",\n      \"type\": \"number\"\n    },\n    {\n      \"name\": \"api_key\",\n      \"value\": \"b2cee89b9a98694240f7af5bf7ae4444da966425bb30189da9411f523c1a332e\",\n      \"type\": \"string\"\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -336,
+        -208
+      ],
+      "id": "ea72995c-27a9-4eae-8eeb-7b1b32bbc5e4",
+      "name": "Set Search Query"
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.assignments[0].value }}"
+            },
+            {
+              "name": "num",
+              "value": "={{ $json.assignments[1].value }}"
+            },
+            {
+              "name": "api_key",
+              "value": "={{ $json.assignments[2].value }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -80,
+        -208
+      ],
+      "id": "6b8b8ced-e290-48c9-8d52-40312f56c311",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst response = items[0].json;\n\nconst organic = response.organic_results || [];\nconst results = [];\n\nfor (const r of organic) {\n  const link = r.link || r.url || \"\";\n  if (link && link.includes(\"linkedin.com/in\")) {\n    const title = (r.title || \"\").replace(/\\s+[-|]\\s*LinkedIn$/i, \"\").trim();\n\n    let name = title;\n    let role = \"\";\n\n    if (title.includes(\" - \")) {\n      const parts = title.split(\" - \");\n      name = parts.shift();\n      role = parts.join(\" - \");\n    } else if (title.includes(\" | \")) {\n      const parts = title.split(\" | \");\n      name = parts.shift();\n      role = parts.join(\" | \");\n    }\n\n    results.push({\n      json: {\n        name: name.trim(),\n        role: (role || r.snippet || \"\").trim(),\n        linkedin: link.trim(),\n        snippet: (r.snippet || \"\").trim(),\n      },\n    });\n  }\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        -208
+      ],
+      "id": "e9d64c54-91b9-41ad-9b4c-84dd3e46b31f",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1TML4rv8JLVIE30LnAezsdCALbq8NWNUc-6fbvEanmfo",
+          "mode": "list",
+          "cachedResultName": "Linkedin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TML4rv8JLVIE30LnAezsdCALbq8NWNUc-6fbvEanmfo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TML4rv8JLVIE30LnAezsdCALbq8NWNUc-6fbvEanmfo/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.name }}",
+            "Role": "={{ $json.role }}",
+            "LinkedIn": "={{ $json.linkedin }}",
+            "Snippet": "={{ $json.snippet }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Role",
+              "displayName": "Role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn",
+              "displayName": "LinkedIn",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Snippet",
+              "displayName": "Snippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        320,
+        -224
+      ],
+      "id": "6b4057c3-6511-427b-b78a-5b8c15342296",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "aKV83k4aLYrGnS0e",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Search LinkedIn profile",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Prompt",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Result",
+              "fieldType": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -624,
+        -224
+      ],
+      "id": "36c6e119-44e6-44d6-9586-47c136d072b1",
+      "name": "On form submission",
+      "webhookId": "a68442b3-868f-4f16-9821-c0ea40637651"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Set Search Query": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Set Search Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2275116e-4dfa-4d9c-a68b-c2ea7b7323a6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ad67ec3b50897ae83d8c8931febc4efd4bc131de5d3afdcd70f08f1612b9089b"
+  },
+  "id": "Vacj8QVLOnqudduB",
+  "tags": []
+}
